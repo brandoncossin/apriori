@@ -27,7 +27,7 @@ void printMiniList(map<vector<string>, vector<int>> list, double k){
     }
     //support of each
     double support = (e.second.size() / k);
-    cout << " ||| " << support << "%"<< endl;
+    cout << " ||| " << support << endl;
   }
 }
 void cleanFunction(map<vector<string>, vector<int>>& uncheckedList, double k, double minSup){
@@ -59,7 +59,7 @@ map<string, vector<double>> ruleCreation(map<vector<string>, vector<int>> list, 
             if (counter & (1<<j))
               antecedent.push_back(e.first[j]);
           }
-        if(antecedent.size() != e.first.size()){
+        if(antecedent.size() != e.first.size() && antecedent.size() != 0){
           //cout << itemset << " ";
           vector<string> consequent;
           auto it = list.find(antecedent);
@@ -68,16 +68,14 @@ map<string, vector<double>> ruleCreation(map<vector<string>, vector<int>> list, 
                               std::inserter(consequent, consequent.end()));
           it = list.find(consequent);
           double consequentSupport = (it->second.size() / k);
-          double itemsetSupport = (e.first.size() / k);
           string associatedRule;
           for(auto f: antecedent)
             associatedRule.append(f + ",");
           associatedRule.append("=>");
           for(auto f: consequent)
             associatedRule.append(f + ",");
-          double confidence = (itemsetSupport / antecedentSupport);
-          double liftBottom = (consequentSupport * antecedentSupport);
-          double lift = (itemsetSupport/liftBottom);
+          double confidence = ((e.second.size()/k) / antecedentSupport);
+          double lift = ((e.second.size()/k)/(consequentSupport * antecedentSupport));
           vector<double> nums;
           nums.push_back(confidence);
           nums.push_back(lift);
@@ -125,6 +123,7 @@ int main(int argc, char* argv[]){
             if (counter & (1<<j))
               itemset.push_back(numbers[j]);
           }
+
       
         vector<int> occurrences;
         occurrences.push_back(k);
