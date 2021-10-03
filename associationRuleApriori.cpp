@@ -10,6 +10,7 @@
 #include <map>
 #include <string>
 #include <cmath>
+#include <algorithm>
 
 using std::vector;
 using std::cout; using std::endl;
@@ -42,28 +43,47 @@ void cleanFunction(map<vector<string>, vector<int>>& uncheckedList, double k, do
     }
   }
 }
-vector<string> ruleCreation(map<vector<string>, vector<int>> list, double minSup){
-  vector<string> Rules;
+map<string, vector<double>> ruleCreation(map<vector<string>, vector<int>> list, double k, double minSup){
+  map<string, vector<double>> Rules;
   for(auto e: list){
 
     unsigned int opsize = std::pow(2, e.first.size());
     /* Run from counter 000..1 to 111..1*/
     for (int counter = 1; counter < opsize; counter++)
       {
-        string itemset;
+        vector<string> antecedent;
         for (int j = 0; j < e.first.size(); j++)
           {
             /* Check if jth bit in the counter is set
                If set then print jth element from arr[] */
             if (counter & (1<<j))
-              itemset.append(e.first[j]);
+              antecedent.push_back(e.first[j]);
           }
-        if(itemset.size() != e.first.size()){
-          cout << itemset << " ";
-          Rules.push_back(itemset);
+        if(antecedent.size() != e.first.size()){
+          //cout << itemset << " ";
+          vector<string> consequent;
+          auto it = list.find(antecedent);
+          double antecedentSupport = (it->second.size() / k);
+          std::set_difference(e.first.begin(), e.first.end(), antecedent.begin(), antecedent.end(),
+                              std::inserter(consequent, consequent.end()));
+          it = list.find(consequent);
+          double consequentSupport = (it->second.size() / k);
+          double itemsetSupport = (e.first.size() / k);
+          string associatedRule;
+          for(auto f: antecedent)
+            associatedRule.append(f + ",");
+          associatedRule.append("=>");
+          for(auto f: consequent)
+            associatedRule.append(f + ",");
+          double confidence = (itemsetSupport / antecedentSupport);
+          double liftBottom = (consequentSupport * antecedentSupport);
+          double lift = (itemsetSupport/liftBottom);
+          vector<double> nums;
+          nums.push_back(confidence);
+          nums.push_back(lift);
+          auto ret = Rules.insert(make_pair(associatedRule, nums));
         }
       }
-    cout << "\n";
   }
   return Rules;
 }
@@ -105,7 +125,7 @@ int main(int argc, char* argv[]){
             if (counter & (1<<j))
               itemset.push_back(numbers[j]);
           }
-
+      
         vector<int> occurrences;
         occurrences.push_back(k);
         auto ret = Candidate.insert(make_pair(itemset, occurrences));
@@ -120,9 +140,13 @@ int main(int argc, char* argv[]){
   cout << "Candidate Set\t Sets \t Support \n";
   cleanFunction(Candidate, k, minSup);
   printMiniList(Candidate, k);
-  vector<string> associationRules = ruleCreation(Candidate, minSup);
-  //for(auto i: associationRules){
-  //cout << i << " ";
-  //}
+  map<string, vector<double>> associationRules = ruleCreation(Candidate, k,  minSup);
+  cout << "Associated Rules\t Confidence\t Lift \n";
+  for(auto i: associationRules){
+    cout << i.first << "\t";
+    for(int f = 0; f < i.second.size(); f++)
+      cout << i.second[f] << "\t";
+    cout << endl;
+  }
   file.close();
 }
