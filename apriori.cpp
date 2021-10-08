@@ -7,34 +7,41 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
-#include <list>
 #include <map>
 #include <string>
 #include <cmath>
+#include <algorithm>
 
-using std::vector; using std::list;
+using std::vector;
 using std::cout; using std::endl;
 using std::map; using std::string;
-void printMiniList(map<string, vector<int>> list){
 
+void printMiniList(map<vector<string>, vector<int>> list, double k){
   for(auto e: list){
-    cout << e.first << ":";
+    for(string f: e.first){
+      cout << f << " ";
+    }
+    cout << ": ";
     for(int i: e.second){
       cout << i << " ";
     }
-    cout << "|||" << e.second.size() << endl;
+    //support of each
+    double support = (e.second.size() / k);
+    cout << " ||| " << support << endl;
   }
 }
-void cleanFunction(map<string, vector<int>>& uncheckedList, double minSup){
+void cleanFunction(map<vector<string>, vector<int>>& uncheckedList, double k, double minSup){
   for(auto it = uncheckedList.begin(); it != uncheckedList.end();){
-    if(it->second.size() < minSup){
-      uncheckedList.erase(it++);
+    //support of each
+    double support = (it->second.size() / k);
+    if(support < minSup){
+      //uncheckedList.erase(it++);
+      it = uncheckedList.erase(it);
     }
     else{
       ++it;
     }
   }
-
 }
 int main(int argc, char* argv[]){
   if (argc <= 2){
@@ -45,23 +52,28 @@ int main(int argc, char* argv[]){
   //first step is to find how many transactions.
   //also find how wide to make it.
   //Candidate itemset of size k
-  map<string, vector<int>> Candidate6;
+  map<vector<string>, vector<int>> Candidate;
   std::ifstream file (argv[1]);
   int k = 0;
   for(std::string line; getline(file, line); ){
-    char letter;
+    string temp;
     ++k;
-    vector<char> numbers;
-    for(char i: line){
-      if(i != ' '){
-        numbers.push_back(i);
+    vector<string> numbers;
+    for(int i = 0; i < line.length(); ++i){
+      if(line[i] == ' ' || line[i] == ','){
+        numbers.push_back(temp);
+        temp = "";
+      }
+      else{
+        temp.push_back(line[i]);
       }
     }
+    numbers.push_back(temp);
     unsigned int opsize = std::pow(2, numbers.size());
     /* Run from counter 000..1 to 111..1*/
     for (int counter = 1; counter < opsize; counter++)
       {
-        string itemset;
+        vector<string> itemset;
         for (int j = 0; j < numbers.size(); j++)
           {
             /* Check if jth bit in the counter is set
@@ -69,10 +81,9 @@ int main(int argc, char* argv[]){
             if (counter & (1<<j))
               itemset.push_back(numbers[j]);
           }
-
         vector<int> occurrences;
         occurrences.push_back(k);
-        auto ret = Candidate6.insert(make_pair(itemset, occurrences));
+        auto ret = Candidate.insert(make_pair(itemset, occurrences));
         if(!ret.second){
           ret.first->second.push_back(k);
         }
@@ -80,9 +91,9 @@ int main(int argc, char* argv[]){
 
   }
   int minPercent = atoi(argv[2]);
-  double minSup = ((double)minPercent/100) * k;
-  cout << "Candidate Set 6\n";
-  cleanFunction(Candidate6, minSup);
-  printMiniList(Candidate6);
+  double minSup = ((double)minPercent/100);
+  cout << "Candidate Set\t Sets \t Support \n";
+  cleanFunction(Candidate, k, minSup);
+  printMiniList(Candidate, k);
   file.close();
 }
